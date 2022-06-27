@@ -166,15 +166,18 @@ for i in range(0, len(uniswap_lps)):
   balances += [[contract1.functions.balanceOf(uniswap_lps[i]).call(), contract2.functions.balanceOf(uniswap_lps[i]).call()]]
   exchange += [w3.eth.contract(address=w3.toChecksumAddress(uniswap_routers[i]), abi=uniswap_router_abi)]
 
-print(balances)
+print("Liquidity Pool Balances of DAI and WETH respectively ", balances)
 from mystic import reduced
 from mystic.solvers import diffev2
 from mystic.monitors import VerboseMonitor
 from numpy.random import rand
 
 for i in range(0, (len(balances) - 1)):
-  for h in range((i + 1), len(balances)):
-    def objective(x): #define function for amount of coins returned after selling x coins on one exchange and buying them back on another
+  for h in range(0, len(balances)):
+    if h == i:
+      continue
+    #define function for amount of coins returned after selling x coins on one exchange and buying them back on another
+    def objective(x): 
       return x[0] - (0.997) * ((0.997) * x[0] * balances[i][1]/(balances[i][0] + (0.997) * x[0])) * balances[h][1]/(balances[h][0] + (0.997) * ((0.997) * x[0] * balances[i][1]/(balances[i][0] + (0.997) * x[0])))
     # define range for input
     r_min = 0
@@ -184,26 +187,27 @@ for i in range(0, (len(balances) - 1)):
     
     # define the starting point as a random sample from the domain
     pt = int(r_min + rand(1) * (r_max - r_min))
-    print("<br><br>Random Starting Position: ", pt, "<br>")
+    print("Random Starting Value: ", pt, " ")
     #Optimize function for calculating coins returned from arbitraging exchanges
     try:
       result = diffev2(objective, x0=[pt], bounds=bounds, npop=40, ftol=1e-8, disp=False, full_output=True, itermon=mon)
     except Exception as e:
-      print("<br>", e)
+      print("Error: ", e)
     # summarize the result
-    print("<br>", uniswap_lps[i], '  ', uniswap_lps[h])
-    print("<br>", result[0][0], " ", result[1])
-    # evaluate solution
+    print("LP Addresses", uniswap_lps[i], ",  ", uniswap_lps[h])
+    print("Calculated Optimal amount DAI bought: ", result[0][0], " amount received back", result[1])
     solution = int(result[0][0])
+    # If suggested amount of coins to purchase is less than 1,000,000/10^18 then don't perform arbitrage
+    # Tolerance will likely need to be adjusted for arbitrage to be profitable
     if solution > 1000000:
       real_value = exchange[h].functions.getAmountsOut(exchange[i].functions.getAmountsOut(int(solution * 0.99), path).call()[1], reverse_path).call()[1]
-      print("<br>", real_value, " ", real_value - int(solution * 0.99))
+      print("Amount Bought: ", int(solution * 0.99), "Amount received: ", real_value, ", Profit: ", real_value - int(solution * 0.99))
       real_value = exchange[h].functions.getAmountsOut(exchange[i].functions.getAmountsOut(int(solution), path).call()[1], reverse_path).call()[1]
-      print("<br>", real_value, " ", real_value - int(solution))
+      print("Amount Bought: ", int(solution), "Amount received: ", real_value, ", Profit: ", real_value - int(solution))
       real_value = exchange[h].functions.getAmountsOut(exchange[i].functions.getAmountsOut(int(solution * 1.01), path).call()[1], reverse_path).call()[1]
-      print("<br>", real_value, " ", real_value - int(solution * 1.01))
+      print("Amount Bought: ", int(solution * 1.01), "Amount received: ", real_value, ", Profit: ", real_value - int(solution * 1.01))
     else:
-      print("<br> 0 - no arbitrage")
+      print("<br> 0 - no arbitrage performed")
+    #newline to seperate outputs
+    print()
     
-
-
