@@ -1,6 +1,49 @@
+"""
+    uniswap v2 exchange formula
+    x * y = k
+    After a transaction the value of token x will increase by a, the amount you sell, and token y will decrease by b, the amount you purchase
+    (x + a) * (y - b) = k
+    xy - xb + ay - ab = k
+    k - xb + ay - ab = k
+    ay - xb - ab = 0
+    ay = xb + ab
+    ay/(x + a) = b
+    
+    For the second exchange we use the input of b, the output from the rpevious exchange, and change the other variables to show they are distinct from the first dex
+    n * m = q
+    (n + b) * (m - c) = q
+    bn - mc - bc = 0
+    bn = mc + bc
+    bn/(m + b) = c
+    
+    Plug in the output from our first dex
+    c = (ay/(x + a))m/(n + (ay/(x + a)))
+    
+    We now have a function for calculating the amount of the same coin we will receive after selling it on one dex then immediately buying them back on another based upon the amount we initially put in, a
+    
+    We see that we want to maximize this function, the difference between our output and input amounts
+    (ay/(x + a))m/(n + (ay/(x + a))) - a
+    
+    Or alternatively we can minimize its additive inverse
+    a - (ay/(x + a))m/(n + (ay/(x + a)))
+    
+    We must also account for fees of 0.3% on each trade, which we make two of
+    a - (1-0.003)((1-0.003)ay/(x + (1-0.003)a))m/(n + (1-0.003)((1-0.003)ay/(x + (1-0.003)a))) = a - (0.997)((0.997)ay/(x + (0.997)a))m/(n + (0.997)((0.997)ay/(x + (0.997)a)))
+    
+    We are now ready to determine whenever a valid, profitable, arbitrage opportunity is available when we can find a negative value for the function
+    a - (0.997)((0.997)ay/(x + (0.997)a))m/(n + (0.997)((0.997)ay/(x + (0.997)a)))
+    
+    we see that we cant sell a negative amount of coins, x>=0, and whenever x is zero that the output will also be zero. So, if this function is greater than or equal to zero whenever a > 0 
+    then we will have a result of a = 0 from our optimization process and the conclusion will be that there is no opportunity for arbitrage.
+    
+    In the code below we substitute a with x
+    
+    This process should be expanded to account for gas fees as well
+    
+"""
+
 from web3 import Web3
 w3 = Web3(Web3.HTTPProvider("https://cloudflare-eth.com"))
-
 
 token_addr1 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"    # DAI 
 token_addr2 = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"    # WETH
@@ -133,49 +176,6 @@ for i in range(0, (len(balances) - 1)):
   for h in range((i + 1), len(balances)):
     def objective(x): #define function for amount of coins returned after selling x coins on one exchange and buying them back on another
       return x[0] - (0.997) * ((0.997) * x[0] * balances[i][1]/(balances[i][0] + (0.997) * x[0])) * balances[h][1]/(balances[h][0] + (0.997) * ((0.997) * x[0] * balances[i][1]/(balances[i][0] + (0.997) * x[0])))
-    """
-    uniswap v2 exchange formula
-    x * y = k
-    After a transaction the value of token x will increase by a, the amount you sell, and token y will decrease by b, the amount you purchase
-    (x + a) * (y - b) = k
-    xy - xb + ay - ab = k
-    k - xb + ay - ab = k
-    ay - xb - ab = 0
-    ay = xb + ab
-    ay/(x + a) = b
-    
-    For the second exchange we use the input of b, the output from the rpevious exchange, and change the other variables to show they are distinct from the first dex
-    n * m = q
-    (n + b) * (m - c) = q
-    bn - mc - bc = 0
-    bn = mc + bc
-    bn/(m + b) = c
-    
-    Plug in the output from our first dex
-    c = (ay/(x + a))m/(n + (ay/(x + a)))
-    
-    We now have a function for calculating the amount of the same coin we will receive after selling it on one dex then immediately buying them back on another based upon the amount we initially put in, a
-    
-    We see that we want to maximize this function, the difference between our output and input amounts
-    (ay/(x + a))m/(n + (ay/(x + a))) - a
-    
-    Or alternatively we can minimize its additive inverse
-    a - (ay/(x + a))m/(n + (ay/(x + a)))
-    
-    We must also account for fees of 0.3% on each trade, which we make two of
-    a - (1-0.003)((1-0.003)ay/(x + (1-0.003)a))m/(n + (1-0.003)((1-0.003)ay/(x + (1-0.003)a))) = a - (0.997)((0.997)ay/(x + (0.997)a))m/(n + (0.997)((0.997)ay/(x + (0.997)a)))
-    
-    We are now ready to determine whenever a valid, profitable, arbitrage opportunity is available when we can find a negative value for the function
-    a - (0.997)((0.997)ay/(x + (0.997)a))m/(n + (0.997)((0.997)ay/(x + (0.997)a)))
-    
-    we see that we cant sell a negative amount of coins, x>=0, and whenever x is zero that the output will also be zero. So, if this function is greater than or equal to zero whenever a > 0 
-    then we will have a result of a = 0 from our optimization process and the conclusion will be that there is no opportunity for arbitrage.
-    
-    In the code above we substitute a with x
-    
-    This process should be expanded to account for gas fees as well
-    
-    """
     # define range for input
     r_min = 0
     r_max = 10**22
