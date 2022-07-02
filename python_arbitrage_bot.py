@@ -178,7 +178,7 @@ for i in range(0, (len(balances) - 1)):
       continue
     #define function for amount of coins returned after selling x coins on one exchange and buying them back on another
     def objective(x): 
-      return x[0] - (0.997) * ((0.997) * x[0] * balances[i][1]/(balances[i][0] + (0.997) * x[0])) * balances[h][1]/(balances[h][0] + (0.997) * ((0.997) * x[0] * balances[i][1]/(balances[i][0] + (0.997) * x[0])))
+      return (x[0] - (0.997) * ((0.997) * x[0] * balances[i][1]/(balances[i][0] + (0.997) * x[0])) * balances[h][0]/(balances[h][1] + (0.997) * ((0.997) * x[0] * balances[i][1]/(balances[i][0] + (0.997) * x[0]))))
     # define range for input
     r_min = 0
     r_max = 10**22
