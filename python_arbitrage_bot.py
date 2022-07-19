@@ -197,9 +197,9 @@ for i in range(0, (len(balances) - 1)):
     print("LP Addresses", uniswap_lps[i], ",  ", uniswap_lps[h])
     print("Calculated Optimal amount DAI bought: ", result[0][0], " amount received back", result[1])
     solution = int(result[0][0])
-    # If suggested amount of coins to purchase is less than 1,000,000/10^18 then don't perform arbitrage
-    # Tolerance will likely need to be adjusted for arbitrage to be profitable
-    if solution > 1000000:
+    # If suggested amount of stable-coins to use for purchase is less than 1,000,000/10^6 then don't perform arbitrage
+    # Tolerance will likely need to be adjusted for arbitrage to be profitable and correct for coins with different amounts of decimal places
+    if solution > 10**6:
       real_value = exchange[h].functions.getAmountsOut(exchange[i].functions.getAmountsOut(int(solution * 0.99), path).call()[1], reverse_path).call()[1]
       print("Amount Bought: ", int(solution * 0.99), "Amount received: ", real_value, ", Profit: ", real_value - int(solution * 0.99))
       real_value = exchange[h].functions.getAmountsOut(exchange[i].functions.getAmountsOut(int(solution), path).call()[1], reverse_path).call()[1]
